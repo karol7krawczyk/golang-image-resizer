@@ -52,11 +52,16 @@ func TestFindImagePath(t *testing.T) {
 	}{
 		{tempDir, "test", filepath.Join(tempDir, "test.jpg"), false},
 		{tempDir, "nonexistent", "", true},
+		{"invalid_base_dir", "test", "", true},
 	}
 
 	for _, test := range tests {
-		result := findImagePath(test.baseDir, test.basePath)
-		if (result == "" && !test.shouldErr) || (result != "" && test.shouldErr) {
+		result, err := findImagePath(test.baseDir, test.basePath)
+		if test.shouldErr && err == nil {
+			t.Errorf("Expected an error but got none for baseDir: %q, basePath: %q", test.baseDir, test.basePath)
+		} else if !test.shouldErr && err != nil {
+			t.Errorf("Did not expect an error but got one for baseDir: %q, basePath: %q", test.baseDir, test.basePath)
+		} else if result != test.expect {
 			t.Errorf("findImagePath(%q, %q) = %q; want %q", test.baseDir, test.basePath, result, test.expect)
 		}
 	}

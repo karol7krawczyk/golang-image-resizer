@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -65,7 +66,6 @@ func loadConfig(filePath string) error {
 		return err
 	}
 
-	// Load server conf
 	port = cfg.Section("server").Key("port").String()
 	baseDir = cfg.Section("server").Key("baseDir").String()
 
@@ -117,59 +117,45 @@ func makeResizeHandler(baseRoute, baseDir string) http.HandlerFunc {
 		}
 
 		format := strings.ToLower(strings.TrimPrefix(requestedExt, "."))
-		imgPath := findImagePath(baseDir, basePath)
-		if imgPath == "" {
+		imgPath, err := findImagePath(baseDir, basePath)
+		if err != nil {
 			http.Error(w, "File not found", http.StatusNotFound)
 			return
 		}
 
-		img, err := decodeImage(imgPath, baseDir)
+		img, err := decodeImage(imgPath)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			log.Printf("Error decoding image %s: %v", imgPath, err)
 			return
 		}
 
-		var newImg image.Image
-		if widthStr == "" {
-			newImg = resize.Resize(0, uint(height), img, resize.Lanczos3)
-		} else if heightStr == "" {
-			newImg = resize.Resize(uint(width), 0, img, resize.Lanczos3)
-		} else {
-			newImg = resize.Resize(uint(width), uint(height), img, resize.Lanczos3)
-		}
-
+		newImg := resizeImage(img, width, height)
 		serveImage(w, newImg, format)
 	}
 }
 
 func parseDimensions(widthStr, heightStr string) (int, int, error) {
-	var width, height int
-	var err error
-	if widthStr != "" {
-		width, err = strconv.Atoi(widthStr)
-		if err != nil {
-			return 0, 0, err
-		}
+	width, err := strconv.Atoi(widthStr)
+	if err != nil {
+		return 0, 0, err
 	}
-	if heightStr != "" {
-		height, err = strconv.Atoi(heightStr)
-		if err != nil {
-			return 0, 0, err
-		}
+	height, err := strconv.Atoi(heightStr)
+	if err != nil {
+		return 0, 0, err
 	}
 	return width, height, nil
 }
 
 func serveOriginalImage(w http.ResponseWriter, baseDir, basePath, requestedExt string) {
 	format := strings.ToLower(strings.TrimPrefix(requestedExt, "."))
-	imgPath := findImagePath(baseDir, basePath)
-	if imgPath == "" {
+	imgPath, err := findImagePath(baseDir, basePath)
+	if err != nil {
 		http.Error(w, "File not found", http.StatusNotFound)
 		return
 	}
 
-	img, err := decodeImage(imgPath, baseDir)
+	img, err := decodeImage(imgPath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("Error decoding image %s: %v", imgPath, err)
@@ -179,8 +165,8 @@ func serveOriginalImage(w http.ResponseWriter, baseDir, basePath, requestedExt s
 	serveImage(w, img, format)
 }
 
-func decodeImage(imgPath string, baseDir string) (image.Image, error) {
-	imgPath = filepath.Clean(imgPath) 
+func decodeImage(imgPath string) (image.Image, error) {
+	imgPath = filepath.Clean(imgPath)
 
 	file, err := os.Open(imgPath)
 	if err != nil {
@@ -211,17 +197,33 @@ func serveImage(w http.ResponseWriter, img image.Image, format string) {
 	}
 }
 
-func findImagePath(baseDir, basePath string) string {
+func findImagePath(baseDir, basePath string) (string, error) {
 	for _, ext := range []string{".jpg", ".jpeg", ".png", ".webp"} {
 		potentialPath := filepath.Join(baseDir, basePath+ext)
-		if _, err := os.Stat(potentialPath); err == nil {
-			return potentialPath
+		cleanPath := filepath.Clean(potentialPath)
+
+		if !strings.HasPrefix(cleanPath, filepath.Clean(baseDir)) {
+			return "", errors.New("invalid path")
+		}
+
+		if _, err := os.Stat(cleanPath); err == nil {
+			return cleanPath, nil
 		}
 	}
-	return ""
+	return "", errors.New("file not found")
 }
 
 func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
+}
+
+func resizeImage(img image.Image, width, height int) image.Image {
+	if width == 0 {
+		return resize.Resize(0, uint(height), img, resize.Lanczos3)
+	}
+	if height == 0 {
+		return resize.Resize(uint(width), 0, img, resize.Lanczos3)
+	}
+	return resize.Resize(uint(width), uint(height), img, resize.Lanczos3)
 }
