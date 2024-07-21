@@ -8,13 +8,13 @@
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Configuration](#configuration)
+- [Configuration File](#configuration-file)
 - [Nginx Configuration](#nginx-configuration)
 - [Testing](#testing)
 - [License](#license)
 
 ## Overview
-The Image Resizing Service is a web application for dynamic image resizing. It allows resizing images based on specified dimensions through HTTP requests. The service supports multiple image formats and can be configured to serve images from various directories and routes.
+The Image Resizing Service is a web server for dynamic image resizing. It allows image resizing based on specified dimensions through HTTP requests. The service supports multiple image formats and can be configured to serve images from various directories and routes.
 
 ## Features
 - **Dynamic Resizing:** Adjust image dimensions using query parameters or shorthand notation.
