@@ -45,7 +45,6 @@ func main() {
 		port = "8080"
 	}
 
-	// Define the server with timeouts
 	server := &http.Server{
 		Addr:         ":" + port,
 		Handler:      nil,
@@ -56,7 +55,6 @@ func main() {
 
 	log.Printf("Server started on :%s", port)
 
-	// Start the server
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Failed to start server: %v", err)
 	}
@@ -126,7 +124,7 @@ func makeResizeHandler(baseRoute, baseDir string) http.HandlerFunc {
 			return
 		}
 
-		img, err := decodeImage(imgPath)
+		img, err := decodeImage(imgPath, baseDir)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			log.Printf("Error decoding image %s: %v", imgPath, err)
@@ -172,7 +170,7 @@ func serveOriginalImage(w http.ResponseWriter, baseDir, basePath, requestedExt s
 		return
 	}
 
-	img, err := decodeImage(imgPath)
+	img, err := decodeImage(imgPath, baseDir)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("Error decoding image %s: %v", imgPath, err)
@@ -182,9 +180,8 @@ func serveOriginalImage(w http.ResponseWriter, baseDir, basePath, requestedExt s
 	serveImage(w, img, format)
 }
 
-func decodeImage(imgPath string) (image.Image, error) {
-	// Validate and sanitize input
-	imgPath = filepath.Clean(imgPath) // Clean the path to prevent path traversal
+func decodeImage(imgPath string, baseDir string) (image.Image, error) {
+	imgPath = filepath.Clean(imgPath) 
 	if !strings.HasPrefix(imgPath, baseDir) {
 		return nil, errors.New("invalid file path")
 	}
