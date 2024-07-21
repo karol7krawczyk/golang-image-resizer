@@ -1,0 +1,18 @@
+services:
+
+  golang:
+    image: golang:1.22
+    container_name: "${COMPOSE_PROJECT_NAME}-golang"
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "go mod tidy && go build -v -ldflags='-s -w' -o resizer main.go && go run ."
+
+  nginx:
+    image: nginx:1.26-alpine
+    container_name: "${COMPOSE_PROJECT_NAME}-nginx"
+    volumes:
+      - .:/app
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "80:80"
