@@ -1,7 +1,7 @@
 services:
 
   golang:
-    image: golang:1.22-alpine
+    image: golang:1.22
     container_name: "${COMPOSE_PROJECT_NAME}-golang"
     working_dir: /app
     volumes:

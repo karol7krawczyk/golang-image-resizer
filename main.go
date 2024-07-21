@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -182,9 +181,6 @@ func serveOriginalImage(w http.ResponseWriter, baseDir, basePath, requestedExt s
 
 func decodeImage(imgPath string, baseDir string) (image.Image, error) {
 	imgPath = filepath.Clean(imgPath) 
-	if !strings.HasPrefix(imgPath, baseDir) {
-		return nil, errors.New("invalid file path")
-	}
 
 	file, err := os.Open(imgPath)
 	if err != nil {
