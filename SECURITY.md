@@ -18,4 +18,4 @@ reported vulnerability, what to expect if the vulnerability is accepted or
 declined, etc.
 
 libwebp: OOB write in BuildHuffmanTable High
-#1 opened 2 weeks ago • Detected in github.com/chai2010/webp (Go) • go.mod
+Detected in github.com/chai2010/webp (Go) • go.mod
